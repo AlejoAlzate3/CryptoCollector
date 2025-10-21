@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: apiGateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters: []
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # Ejemplo de rutas estáticas (opcional)
+        # - id: auth-service
+        #   uri: lb://service-auth
+        #   predicates:
+        #     - Path=/api/auth/**
+        # - id: crypto-service
+        #   uri: lb://service-crypto
+        #   predicates:
+        #     - Path=/api/crypto/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: "http://localhost:8761/eureka/"
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24 horas
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    org.springframework.web: INFO

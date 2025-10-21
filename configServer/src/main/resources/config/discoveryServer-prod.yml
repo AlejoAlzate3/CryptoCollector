@@ -1,0 +1,9 @@
+server:
+  port: 8761
+
+eureka:
+  instance:
+    hostname: discovery-prod.cryto.com
+  client:
+    register-with-eureka: true
+    fetch-registry: true
