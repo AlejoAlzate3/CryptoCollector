@@ -1,0 +1,70 @@
+package com.cryptoCollector.apiGateway.resources.filter;
+
+import com.cryptoCollector.apiGateway.config.JwtConfig;
+import com.cryptoCollector.apiGateway.util.JwtUtil;
+import io.jsonwebtoken.Claims;
+import lombok.RequiredArgsConstructor;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+@Component
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
+
+    private final JwtConfig jwtConfig;
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String path = exchange.getRequest().getURI().getPath();
+
+        // Permitir rutas públicas
+        if (path.startsWith("/api/auth") || path.startsWith("/swagger") || path.startsWith("/v3/api-docs")) {
+            return chain.filter(exchange);
+        }
+
+        // Obtener token
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            JwtUtil jwtUtil = new JwtUtil(jwtConfig.getSecret());
+            if (!jwtUtil.validateToken(token)) {
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
+            }
+
+            Claims claims = jwtUtil.extractAllClaims(token);
+
+            // Propagar claims al request
+            exchange = exchange.mutate()
+                    .request(r -> r.headers(h -> {
+                        h.add("X-User-Id", claims.getSubject());
+                        h.add("X-User-Email", String.valueOf(claims.get("email")));
+                        h.add("X-User-Roles", String.valueOf(claims.get("roles")));
+                    }))
+                    .build();
+
+        } catch (Exception e) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+
+        return chain.filter(exchange);
+    }
+
+    @Override
+    public int getOrder() {
+        return -1; // alta prioridad
+    }
+}
