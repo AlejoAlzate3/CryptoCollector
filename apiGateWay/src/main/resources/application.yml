@@ -2,22 +2,4 @@ spring:
     application:
         name: apiGateway
     config:
-        import: optional:configserver:http://localhost:8888
-    cloud:
-        gateway:
-        discovery:
-            locator:
-            enabled: true
-            lower-case-service-id: true
-
-eureka:
-    client:
-        service-url:
-        defaultZone: http://localhost:8761/eureka/
-
-server:
-    port: 8080
-
-logging:
-    level:
-        org.springframework.cloud.gateway: INFO
+        import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
