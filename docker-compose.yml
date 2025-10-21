@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15
+    image: postgres:17
     env_file:
       - .env
     environment:
@@ -12,6 +12,11 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   config-server:
     build:
@@ -78,15 +83,26 @@ services:
     image: cryptocollector/auth-service:latest
     env_file:
       - .env
+    environment:
+      - SPRING_CLOUD_CONFIG_IMPORT_CHECK_ENABLED=false
+      - SPRING_FLYWAY_ENABLED=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"service-url":{"defaultZone":"http://discovery-server:8761/eureka/"}}}}'
+      - 'JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-server:8761/eureka/'
     ports:
-      - "8081:8081"
+      - "8081:8080"
     depends_on:
       discovery-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 5s
       timeout: 5s
       retries: 12
