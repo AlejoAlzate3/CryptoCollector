@@ -30,6 +30,7 @@
     <modules>
         <module>configServer</module>
         <module>discoveryServer</module>
+        <module>apiGateway</module>
         <module>microServices</module>
     </modules>
     <properties>
