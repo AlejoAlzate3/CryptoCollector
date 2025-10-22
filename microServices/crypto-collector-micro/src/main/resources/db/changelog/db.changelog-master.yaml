@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: "1"
+      author: crypto_collector_db
+      changes:
+        - createTable:
+            tableName: cryptocurrency
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: coin_id
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: symbol
+                  type: varchar(50)
+              - column:
+                  name: market_cap_rank
+                  type: integer
+              - column:
+                  name: current_price
+                  type: double precision
+              - column:
+                  name: market_cap
+                  type: double precision
+              - column:
+                  name: total_volume
+                  type: double precision
+              - column:
+                  name: last_updated
+                  type: timestamp with time zone

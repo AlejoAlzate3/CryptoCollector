@@ -15,22 +15,40 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        # Ejemplo de rutas estáticas (opcional)
-        # - id: auth-service
-        #   uri: lb://service-auth
-        #   predicates:
-        #     - Path=/api/auth/**
-        # - id: crypto-service
-        #   uri: lb://service-crypto
-        #   predicates:
-        #     - Path=/api/crypto/**
+        # Ruta para auth-service
+        - id: auth-service
+          uri: lb://auth-microservices
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=1
+        
+        # Ruta para crypto-collector
+        - id: crypto-collector
+          uri: lb://crypto-collector-micro
+          predicates:
+            - Path=/crypto/**
+          filters:
+            - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
 
 eureka:
   client:
     service-url:
       defaultZone: "http://discovery-server:8761/eureka/"
+    register-with-eureka: true
+    fetch-registry: true
   instance:
     prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
 
 jwt:
   secret: ${JWT_SECRET:devSecretChangeMe}
@@ -38,5 +56,6 @@ jwt:
 
 logging:
   level:
-    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway: DEBUG
     org.springframework.web: INFO
+    com.netflix.discovery: INFO

@@ -1,6 +1,6 @@
 spring:
     datasource:
-        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:cryptodata}}
+        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:crypto_collector_db}}
         username: ${POSTGRES_USER:postgres}
         password: ${POSTGRES_PASSWORD:postgres}
         jpa:

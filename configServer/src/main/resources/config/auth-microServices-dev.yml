@@ -12,6 +12,15 @@ spring:
         secret: ${JWT_SECRET:change_this_to_a_real_secret}
         expiration: ${JWT_EXPIRATION:86400000}
 
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics
+    endpoint:
+        health:
+            show-details: always
+
 springdoc:
     api-docs:
         path: /v3/api-docs

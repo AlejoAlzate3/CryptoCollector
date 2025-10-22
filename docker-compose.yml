@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost || exit 1"]
@@ -63,6 +64,10 @@ services:
     image: cryptocollector/api-gateway:latest
     env_file:
       - .env
+    environment:
+      - CONFIG_SERVER_URI=http://config-server:8888
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=dev
     ports:
       - "8080:8080"
     depends_on:
@@ -102,10 +107,42 @@ services:
       config-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 5s
+      test: ["CMD", "nc", "-z", "localhost", "8080"]
+      interval: 10s
       timeout: 5s
       retries: 12
+      start_period: 30s
+
+  crypto-collector-micro:
+    build:
+      context: ./microServices/crypto-collector-micro
+      dockerfile: Dockerfile
+    image: cryptocollector/crypto-collector-micro:latest
+    env_file:
+      - .env
+    environment:
+      - CONFIG_SERVER_URI=http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/crypto_collector_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8092:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
 volumes:
   postgres-data:
