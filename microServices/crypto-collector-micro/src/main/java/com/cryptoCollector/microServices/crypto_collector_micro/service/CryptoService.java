@@ -27,11 +27,23 @@ public class CryptoService {
 
     /**
      * Sincroniza exactamente 1000 criptos desde CoinGecko.
-     * Totalmente reactivo.
+     * Totalmente reactivo con delay entre requests.
      */
     @Transactional
     public Mono<Long> syncFromRemoteReactive() {
         return fetchService.fetchExactly1000Reactive()
+                .flatMap(this::upsertReactive)
+                .count();
+    }
+
+    /**
+     * Versión de prueba: sincroniza solo 100 criptomonedas (2 páginas).
+     * Más rápido para testing y menor riesgo de rate limiting.
+     */
+    @Transactional
+    public Mono<Long> syncTestReactive() {
+        return fetchService.fetchSinglePage(1, 50)
+                .concatWith(fetchService.fetchSinglePage(2, 50))
                 .flatMap(this::upsertReactive)
                 .count();
     }
@@ -102,5 +114,27 @@ public class CryptoService {
                     ? Mono.just(opt.get()) 
                     : Mono.empty())
                 .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * Obtiene estadísticas de la base de datos.
+     * 
+     * @return Mapa con total de criptomonedas y última actualización
+     */
+    public Mono<java.util.Map<String, Object>> getStats() {
+        return Mono.fromCallable(() -> {
+            long total = repository.count();
+            java.util.Optional<CryptoCurrency> latest = repository.findAll(
+                org.springframework.data.domain.PageRequest.of(0, 1, 
+                    org.springframework.data.domain.Sort.by("lastUpdated").descending())
+            ).stream().findFirst();
+
+            java.util.Map<String, Object> stats = new java.util.HashMap<>();
+            stats.put("total", total);
+            stats.put("lastUpdated", latest.map(CryptoCurrency::getLastUpdated).orElse(null));
+            stats.put("hasSyncedData", total > 0);
+            
+            return stats;
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 }

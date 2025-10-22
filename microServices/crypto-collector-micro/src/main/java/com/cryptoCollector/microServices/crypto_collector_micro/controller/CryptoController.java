@@ -24,12 +24,37 @@ public class CryptoController {
         this.service = service;
     }
 
+    /**
+     * Sincroniza hasta 1000 criptomonedas desde CoinGecko.
+     * ADVERTENCIA: Puede tomar varios minutos debido a rate limiting.
+     */
     @PostMapping("/sync")
     public Mono<ResponseEntity<Map<String, Object>>> sync() {
         return service.syncFromRemoteReactive()
                 .map(count -> {
                     Map<String, Object> body = new HashMap<>();
                     body.put("status", "OK");
+                    body.put("synced", count);
+                    return ResponseEntity.ok(body);
+                })
+                .onErrorResume(e -> {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", e.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError().body(error));
+                });
+    }
+
+    /**
+     * Endpoint de prueba: Sincroniza solo 100 criptomonedas (2 páginas de 50).
+     * Más rápido y con menor probabilidad de rate limiting.
+     */
+    @PostMapping("/sync-test")
+    public Mono<ResponseEntity<Map<String, Object>>> syncTest() {
+        return service.syncTestReactive()
+                .map(count -> {
+                    Map<String, Object> body = new HashMap<>();
+                    body.put("status", "OK");
+                    body.put("message", "Test sync completed");
                     body.put("synced", count);
                     return ResponseEntity.ok(body);
                 })
@@ -85,5 +110,15 @@ public class CryptoController {
         return service.findByCoinId(coinId)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Endpoint para obtener estadísticas de la base de datos.
+     * Muestra el total de criptomonedas y la última actualización.
+     */
+    @GetMapping("/stats")
+    public Mono<ResponseEntity<Map<String, Object>>> getStats() {
+        return service.getStats()
+                .map(ResponseEntity::ok);
     }
 }

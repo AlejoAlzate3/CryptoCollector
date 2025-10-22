@@ -128,6 +128,7 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=dev
+      - COINGECKO_API_KEY=${COINGECKO_API_KEY}
     ports:
       - "8092:8080"
     depends_on:
