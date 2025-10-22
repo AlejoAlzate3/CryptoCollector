@@ -29,6 +29,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>auth-microServices</module>
+        <module>crypto-collector-micro</module>
     </modules>
     <properties>
         <spring-cloud.version>2025.0.0</spring-cloud.version>

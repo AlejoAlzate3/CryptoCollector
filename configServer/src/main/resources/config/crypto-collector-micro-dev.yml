@@ -1,6 +1,6 @@
 spring:
     datasource:
-        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:cryptousers}}
+        url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:cryptodata}}
         username: ${POSTGRES_USER:postgres}
         password: ${POSTGRES_PASSWORD:postgres}
         jpa:
@@ -17,3 +17,7 @@ springdoc:
         path: /v3/api-docs
     swagger-ui:
         path: /swagger-ui.html
+
+logging:
+    level:
+        root: INFO
