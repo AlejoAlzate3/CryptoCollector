@@ -121,4 +121,14 @@ public class CryptoController {
         return service.getStats()
                 .map(ResponseEntity::ok);
     }
+
+    /**
+     * Endpoint para obtener el estado del scheduler de sincronización automática.
+     * Muestra la configuración, última ejecución y próxima ejecución programada.
+     */
+    @GetMapping("/scheduler/status")
+    public Mono<ResponseEntity<Map<String, Object>>> getSchedulerStatus() {
+        return service.getSchedulerStatus()
+                .map(ResponseEntity::ok);
+    }
 }

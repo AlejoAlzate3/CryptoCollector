@@ -20,7 +20,7 @@ public class CryptoService {
     private final CryptoFetchService fetchService;
 
     public CryptoService(CryptoRepository repository,
-                        CryptoFetchService fetchService) {
+            CryptoFetchService fetchService) {
         this.repository = repository;
         this.fetchService = fetchService;
     }
@@ -50,10 +50,10 @@ public class CryptoService {
 
     private Mono<CryptoCurrency> upsertReactive(CoinGeckoCoin coin) {
         return Mono.fromCallable(() -> {
-                    return repository.findByCoinId(coin.getId())
-                            .map(existing -> updateEntity(existing, coin))
-                            .orElseGet(() -> createEntity(coin));
-                })
+            return repository.findByCoinId(coin.getId())
+                    .map(existing -> updateEntity(existing, coin))
+                    .orElseGet(() -> createEntity(coin));
+        })
                 .map(repository::save)
                 .subscribeOn(Schedulers.boundedElastic());
     }
@@ -87,7 +87,7 @@ public class CryptoService {
     /**
      * Lista criptomonedas con paginación y búsqueda opcional.
      * 
-     * @param query Búsqueda por nombre o símbolo (case insensitive)
+     * @param query    Búsqueda por nombre o símbolo (case insensitive)
      * @param pageable Configuración de paginación y ordenamiento
      * @return Página de criptomonedas
      */
@@ -95,7 +95,7 @@ public class CryptoService {
         return Mono.fromCallable(() -> {
             if (query != null && !query.trim().isEmpty()) {
                 return repository.findByNameContainingIgnoreCaseOrSymbolContainingIgnoreCase(
-                    query.trim(), query.trim(), pageable);
+                        query.trim(), query.trim(), pageable);
             } else {
                 return repository.findAll(pageable);
             }
@@ -110,9 +110,9 @@ public class CryptoService {
      */
     public Mono<CryptoCurrency> findByCoinId(String coinId) {
         return Mono.fromCallable(() -> repository.findByCoinId(coinId))
-                .flatMap(opt -> opt.isPresent() 
-                    ? Mono.just(opt.get()) 
-                    : Mono.empty())
+                .flatMap(opt -> opt.isPresent()
+                        ? Mono.just(opt.get())
+                        : Mono.empty())
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -125,16 +125,75 @@ public class CryptoService {
         return Mono.fromCallable(() -> {
             long total = repository.count();
             java.util.Optional<CryptoCurrency> latest = repository.findAll(
-                org.springframework.data.domain.PageRequest.of(0, 1, 
-                    org.springframework.data.domain.Sort.by("lastUpdated").descending())
-            ).stream().findFirst();
+                    org.springframework.data.domain.PageRequest.of(0, 1,
+                            org.springframework.data.domain.Sort.by("lastUpdated").descending()))
+                    .stream().findFirst();
 
             java.util.Map<String, Object> stats = new java.util.HashMap<>();
             stats.put("total", total);
             stats.put("lastUpdated", latest.map(CryptoCurrency::getLastUpdated).orElse(null));
             stats.put("hasSyncedData", total > 0);
-            
+
             return stats;
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * Obtiene el estado del scheduler de sincronización automática.
+     * 
+     * @return Mapa con información del scheduler, última sincronización y próxima
+     *         ejecución
+     */
+    public Mono<java.util.Map<String, Object>> getSchedulerStatus() {
+        return Mono.fromCallable(() -> {
+            java.util.Map<String, Object> status = new java.util.HashMap<>();
+
+            // Configuración del scheduler
+            status.put("enabled", true);
+            status.put("frequency", "Every 6 hours");
+            status.put("schedule", "00:00, 06:00, 12:00, 18:00 UTC");
+            status.put("cronExpression", "0 0 */6 * * *");
+
+            // Última sincronización
+            long total = repository.count();
+            java.util.Optional<CryptoCurrency> latest = repository.findAll(
+                    org.springframework.data.domain.PageRequest.of(0, 1,
+                            org.springframework.data.domain.Sort.by("lastUpdated").descending()))
+                    .stream().findFirst();
+
+            status.put("lastSync", latest.map(CryptoCurrency::getLastUpdated).orElse(null));
+            status.put("totalCryptos", total);
+
+            // Calcular próxima ejecución
+            OffsetDateTime now = OffsetDateTime.now();
+            int currentHour = now.getHour();
+            int nextHour;
+            String nextDay = "today";
+
+            if (currentHour < 6) {
+                nextHour = 6;
+            } else if (currentHour < 12) {
+                nextHour = 12;
+            } else if (currentHour < 18) {
+                nextHour = 18;
+            } else {
+                nextHour = 0;
+                nextDay = "tomorrow";
+            }
+
+            OffsetDateTime nextSync = now.withHour(nextHour).withMinute(0).withSecond(0).withNano(0);
+            if (nextHour == 0 && currentHour >= 18) {
+                nextSync = nextSync.plusDays(1);
+            }
+
+            status.put("nextSync", nextSync);
+            status.put("nextSyncDescription", String.format("%02d:00:00 UTC (%s)", nextHour, nextDay));
+
+            // Calcular tiempo restante
+            long minutesUntilNext = java.time.Duration.between(now, nextSync).toMinutes();
+            status.put("minutesUntilNext", minutesUntilNext);
+
+            return status;
         }).subscribeOn(Schedulers.boundedElastic());
     }
 }
