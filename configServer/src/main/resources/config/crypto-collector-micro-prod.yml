@@ -3,21 +3,51 @@ spring:
         url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:crypto_collector_db}}
         username: ${POSTGRES_USER:postgres}
         password: ${POSTGRES_PASSWORD:postgres}
+        hikari:
+            maximum-pool-size: 20
+            minimum-idle: 5
+            connection-timeout: 30000
         jpa:
             hibernate:
-                ddl-auto: update
-            show-sql: true
+                ddl-auto: validate
+            show-sql: false
+            properties:
+                hibernate:
+                    format_sql: false
+                    use_sql_comments: false
 
     jwt:
-        secret: ${JWT_SECRET:change_this_to_a_real_secret}
+        secret: ${JWT_SECRET}
         expiration: ${JWT_EXPIRATION:86400000}
 
-springdoc:
-    api-docs:
-        path: /v3/api-docs
-    swagger-ui:
-        path: /swagger-ui.html
+coingecko:
+    api:
+        key: ${COINGECKO_API_KEY}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics,prometheus
+    endpoint:
+        health:
+            show-details: when-authorized
+    metrics:
+        export:
+            prometheus:
+                enabled: true
 
 logging:
     level:
-        root: INFO
+        root: WARN
+        com.cryptoCollector: INFO
+        org.springframework.web: WARN
+        org.hibernate: WARN
+    pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+springdoc:
+    api-docs:
+        enabled: false
+    swagger-ui:
+        enabled: false

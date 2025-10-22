@@ -26,13 +26,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // No filtrar rutas públicas
+        return path.startsWith("/api/auth") || 
+               path.startsWith("/actuator") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-ui");
+    }    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             final String token = authHeader.substring(7);
             String subject = jwtUtil.getSubjectFromToken(token);
             if (subject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                var auth = new UsernamePasswordAuthenticationToken(subject, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                var auth = new UsernamePasswordAuthenticationToken(subject, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_USER")));
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }

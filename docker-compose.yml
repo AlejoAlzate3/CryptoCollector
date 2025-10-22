@@ -89,6 +89,8 @@ services:
     env_file:
       - .env
     environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - CONFIG_SERVER_URI=http://config-server:8888
       - SPRING_CLOUD_CONFIG_IMPORT_CHECK_ENABLED=false
       - SPRING_FLYWAY_ENABLED=false
       - SPRING_DATASOURCE_URL=jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
@@ -96,9 +98,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - 'SPRING_APPLICATION_JSON={"eureka":{"client":{"service-url":{"defaultZone":"http://discovery-server:8761/eureka/"}}}}'
-      - 'JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-server:8761/eureka/'
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
     ports:
       - "8081:8080"
     depends_on:
@@ -128,6 +129,8 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_PROFILES_ACTIVE=dev
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
       - COINGECKO_API_KEY=${COINGECKO_API_KEY}
     ports:
       - "8092:8080"
