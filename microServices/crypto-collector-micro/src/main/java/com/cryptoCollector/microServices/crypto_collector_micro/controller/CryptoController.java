@@ -45,27 +45,6 @@ public class CryptoController {
     }
 
     /**
-     * Endpoint de prueba: Sincroniza solo 100 criptomonedas (2 páginas de 50).
-     * Más rápido y con menor probabilidad de rate limiting.
-     */
-    @PostMapping("/sync-test")
-    public Mono<ResponseEntity<Map<String, Object>>> syncTest() {
-        return service.syncTestReactive()
-                .map(count -> {
-                    Map<String, Object> body = new HashMap<>();
-                    body.put("status", "OK");
-                    body.put("message", "Test sync completed");
-                    body.put("synced", count);
-                    return ResponseEntity.ok(body);
-                })
-                .onErrorResume(e -> {
-                    Map<String, Object> error = new HashMap<>();
-                    error.put("error", e.getMessage());
-                    return Mono.just(ResponseEntity.internalServerError().body(error));
-                });
-    }
-
-    /**
      * Endpoint para listar criptomonedas con paginación, filtros y ordenamiento.
      * 
      * @param query Búsqueda por nombre o símbolo (opcional)

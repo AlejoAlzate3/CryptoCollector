@@ -36,18 +36,6 @@ public class CryptoService {
                 .count();
     }
 
-    /**
-     * Versión de prueba: sincroniza solo 100 criptomonedas (2 páginas).
-     * Más rápido para testing y menor riesgo de rate limiting.
-     */
-    @Transactional
-    public Mono<Long> syncTestReactive() {
-        return fetchService.fetchSinglePage(1, 50)
-                .concatWith(fetchService.fetchSinglePage(2, 50))
-                .flatMap(this::upsertReactive)
-                .count();
-    }
-
     private Mono<CryptoCurrency> upsertReactive(CoinGeckoCoin coin) {
         return Mono.fromCallable(() -> {
             return repository.findByCoinId(coin.getId())
