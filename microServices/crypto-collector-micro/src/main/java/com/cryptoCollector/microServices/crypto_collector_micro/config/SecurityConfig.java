@@ -33,6 +33,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/public/**").permitAll()  // Endpoints públicos para demos
                 .requestMatchers("/api/crypto/**").authenticated()
                 .anyRequest().denyAll()
             )

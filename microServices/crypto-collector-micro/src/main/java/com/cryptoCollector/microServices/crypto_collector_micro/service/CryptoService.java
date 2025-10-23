@@ -7,6 +7,10 @@ import com.cryptoCollector.microServices.crypto_collector_micro.repository.Crypt
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +20,7 @@ import java.time.OffsetDateTime;
 @Service
 public class CryptoService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CryptoService.class);
     private final CryptoRepository repository;
     private final CryptoFetchService fetchService;
 
@@ -28,12 +33,16 @@ public class CryptoService {
     /**
      * Sincroniza exactamente 1000 criptos desde CoinGecko.
      * Totalmente reactivo con delay entre requests.
+     * LIMPIA CACHE: Al sincronizar, invalida todos los caches para forzar datos frescos
      */
     @Transactional
+    @CacheEvict(value = {"crypto-list", "crypto-details", "crypto-stats", "scheduler-status"}, allEntries = true)
     public Mono<Long> syncFromRemoteReactive() {
+        logger.info("🗑️  Limpiando TODOS los caches antes de sincronizar datos...");
         return fetchService.fetchExactly1000Reactive()
                 .flatMap(this::upsertReactive)
-                .count();
+                .count()
+                .doOnSuccess(count -> logger.info("✅ Sincronización completa. {} cryptos actualizadas. Cache limpio.", count));
     }
 
     private Mono<CryptoCurrency> upsertReactive(CoinGeckoCoin coin) {
@@ -74,12 +83,17 @@ public class CryptoService {
 
     /**
      * Lista criptomonedas con paginación y búsqueda opcional.
+     * NOTA: Cache deshabilitado temporalmente para listCryptos porque Spring Data Page
+     * no se serializa correctamente en Redis (se convierte en LinkedHashMap).
      * 
      * @param query    Búsqueda por nombre o símbolo (case insensitive)
      * @param pageable Configuración de paginación y ordenamiento
      * @return Página de criptomonedas
      */
+    // @Cacheable deshabilitado - Page<> no se serializa bien en Redis
     public Mono<Page<CryptoCurrency>> listCryptos(String query, Pageable pageable) {
+        logger.debug("� Consultando lista de cryptos: query={}, page={}", 
+                    query, pageable.getPageNumber());
         return Mono.fromCallable(() -> {
             if (query != null && !query.trim().isEmpty()) {
                 return repository.findByNameContainingIgnoreCaseOrSymbolContainingIgnoreCase(
@@ -92,11 +106,14 @@ public class CryptoService {
 
     /**
      * Busca una criptomoneda por su coinId.
+     * CACHEADO: Detalles individuales se cachean por 2 minutos
      * 
      * @param coinId ID de la criptomoneda en CoinGecko
      * @return Mono con la criptomoneda o Mono vacío si no existe
      */
+    @Cacheable(value = "crypto-details", key = "#coinId")
     public Mono<CryptoCurrency> findByCoinId(String coinId) {
+        logger.info("💾 Cache MISS - Consultando BD para crypto: {}", coinId);
         return Mono.fromCallable(() -> repository.findByCoinId(coinId))
                 .flatMap(opt -> opt.isPresent()
                         ? Mono.just(opt.get())
@@ -106,10 +123,13 @@ public class CryptoService {
 
     /**
      * Obtiene estadísticas de la base de datos.
+     * CACHEADO: Stats se cachean por 1 minuto
      * 
      * @return Mapa con total de criptomonedas y última actualización
      */
+    @Cacheable(value = "crypto-stats")
     public Mono<java.util.Map<String, Object>> getStats() {
+        logger.info("💾 Cache MISS - Consultando estadísticas de BD");
         return Mono.fromCallable(() -> {
             long total = repository.count();
             java.util.Optional<CryptoCurrency> latest = repository.findAll(
@@ -119,7 +139,8 @@ public class CryptoService {
 
             java.util.Map<String, Object> stats = new java.util.HashMap<>();
             stats.put("total", total);
-            stats.put("lastUpdated", latest.map(CryptoCurrency::getLastUpdated).orElse(null));
+            // Convertir OffsetDateTime a String para que Redis pueda serializarlo
+            stats.put("lastUpdated", latest.map(c -> c.getLastUpdated() != null ? c.getLastUpdated().toString() : null).orElse(null));
             stats.put("hasSyncedData", total > 0);
 
             return stats;
@@ -128,11 +149,14 @@ public class CryptoService {
 
     /**
      * Obtiene el estado del scheduler de sincronización automática.
+     * CACHEADO: Estado del scheduler se cachea por 1 minuto
      * 
      * @return Mapa con información del scheduler, última sincronización y próxima
      *         ejecución
      */
+    @Cacheable(value = "scheduler-status")
     public Mono<java.util.Map<String, Object>> getSchedulerStatus() {
+        logger.info("💾 Cache MISS - Consultando estado del scheduler");
         return Mono.fromCallable(() -> {
             java.util.Map<String, Object> status = new java.util.HashMap<>();
 
@@ -149,7 +173,8 @@ public class CryptoService {
                             org.springframework.data.domain.Sort.by("lastUpdated").descending()))
                     .stream().findFirst();
 
-            status.put("lastSync", latest.map(CryptoCurrency::getLastUpdated).orElse(null));
+            // Convertir OffsetDateTime a String para Redis
+            status.put("lastSync", latest.map(c -> c.getLastUpdated() != null ? c.getLastUpdated().toString() : null).orElse(null));
             status.put("totalCryptos", total);
 
             // Calcular próxima ejecución
@@ -174,7 +199,8 @@ public class CryptoService {
                 nextSync = nextSync.plusDays(1);
             }
 
-            status.put("nextSync", nextSync);
+            // Convertir OffsetDateTime a String para Redis
+            status.put("nextSync", nextSync.toString());
             status.put("nextSyncDescription", String.format("%02d:00:00 UTC (%s)", nextHour, nextDay));
 
             // Calcular tiempo restante

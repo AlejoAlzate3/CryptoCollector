@@ -33,7 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         boolean skip = path.startsWith("/actuator") ||
                 path.startsWith("/v3/api-docs") ||
-                path.startsWith("/swagger-ui");
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/api/public");  // Endpoints públicos para demos
         if (skip) {
             logger.info("⏭️  Saltando filtro JWT para ruta pública: {}", path);
         }

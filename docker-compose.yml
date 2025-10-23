@@ -114,6 +114,20 @@ services:
       retries: 12
       start_period: 30s
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+
   crypto-collector-micro:
     build:
       context: ./microServices/crypto-collector-micro
@@ -132,10 +146,14 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
       - COINGECKO_API_KEY=${COINGECKO_API_KEY}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
     ports:
       - "8092:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
@@ -150,6 +168,8 @@ services:
 
 volumes:
   postgres-data:
+    driver: local
+  redis-data:
     driver: local
 
 networks:
