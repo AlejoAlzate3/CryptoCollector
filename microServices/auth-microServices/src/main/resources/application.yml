@@ -15,6 +15,17 @@ management:
             exposure:
                 include: health,info
 
+# Configuración de Springdoc/Swagger para trabajar detrás del API Gateway
+springdoc:
+    api-docs:
+        enabled: true
+    swagger-ui:
+        enabled: true
+    use-management-port: false
+    use-root-path: false
+server:
+    forward-headers-strategy: framework
+
 eureka:
     client:
         service-url:

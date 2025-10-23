@@ -15,21 +15,89 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        # Ruta para auth-service
-        - id: auth-service
+        # ============================================
+        # AUTH SERVICE ROUTES
+        # ============================================
+        
+        # Auth - Register & Login (público)
+        - id: auth-public
           uri: lb://auth-microservices
           predicates:
-            - Path=/auth/**
+            - Path=/api/auth/register, /api/auth/login
           filters:
-            - StripPrefix=1
+            - RewritePath=/api/auth/(?<segment>.*), /api/auth/$\{segment}
         
-        # Ruta para crypto-collector
-        - id: crypto-collector
+        # Auth - Swagger UI (sin trailing slash en segment)
+        - id: auth-swagger-ui
+          uri: lb://auth-microservices
+          predicates:
+            - Path=/auth/swagger-ui/**
+          filters:
+            - RewritePath=/auth/(?<segment>.*), /$\{segment}
+            - PreserveHostHeader
+            - AddRequestHeader=X-Forwarded-Prefix, /auth
+        
+        # Auth - API Docs
+        - id: auth-api-docs
+          uri: lb://auth-microservices
+          predicates:
+            - Path=/auth/v3/api-docs/**
+          filters:
+            - RewritePath=/auth/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Prefix, /auth
+        
+        # ============================================
+        # CRYPTO COLLECTOR ROUTES
+        # ============================================
+        
+        # Crypto - Endpoints públicos (sin autenticación)
+        - id: crypto-public
           uri: lb://crypto-collector-micro
           predicates:
-            - Path=/crypto/**
+            - Path=/api/public/**
           filters:
-            - StripPrefix=1
+            - RewritePath=/api/public/(?<segment>.*), /api/public/$\{segment}
+        
+        # Crypto - Endpoints protegidos
+        - id: crypto-protected
+          uri: lb://crypto-collector-micro
+          predicates:
+            - Path=/api/crypto/**, /api/cache/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+        
+        # Crypto - Swagger UI (sin trailing slash en segment)
+        - id: crypto-swagger-ui
+          uri: lb://crypto-collector-micro
+          predicates:
+            - Path=/crypto/swagger-ui/**
+          filters:
+            - RewritePath=/crypto/(?<segment>.*), /$\{segment}
+            - PreserveHostHeader
+            - AddRequestHeader=X-Forwarded-Prefix, /crypto
+        
+        # Crypto - API Docs
+        - id: crypto-api-docs
+          uri: lb://crypto-collector-micro
+          predicates:
+            - Path=/crypto/v3/api-docs/**
+          filters:
+            - RewritePath=/crypto/(?<segment>.*), /$\{segment}
+            - AddRequestHeader=X-Forwarded-Prefix, /crypto
+      
+      # Configuración global de CORS
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: false
 
 management:
   endpoints:
