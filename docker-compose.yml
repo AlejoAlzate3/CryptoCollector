@@ -1,5 +1,6 @@
 services:
   postgres:
+    container_name: crypto-postgres
     image: postgres:17
     env_file:
       - .env
@@ -12,6 +13,8 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+    networks:
+      - crypto-network
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost || exit 1"]
@@ -20,6 +23,7 @@ services:
       retries: 12
 
   config-server:
+    container_name: crypto-config-server
     build:
       context: ./configServer
       dockerfile: Dockerfile
@@ -30,6 +34,8 @@ services:
       - SPRING_PROFILES_ACTIVE=native
     ports:
       - "8888:8888"
+    networks:
+      - crypto-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,8 +44,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
+    restart: always
 
   discovery-server:
+    container_name: crypto-discovery-server
     build:
       context: ./discoveryServer
       dockerfile: Dockerfile
@@ -48,6 +56,8 @@ services:
       - .env
     ports:
       - "8761:8761"
+    networks:
+      - crypto-network
     depends_on:
       config-server:
         condition: service_healthy
@@ -56,8 +66,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
+    restart: always
 
   api-gateway:
+    container_name: crypto-api-gateway
     build:
       context: ./apiGateWay
       dockerfile: Dockerfile
@@ -67,9 +79,11 @@ services:
     environment:
       - CONFIG_SERVER_URI=http://config-server:8888
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
     ports:
       - "8080:8080"
+    networks:
+      - crypto-network
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -80,8 +94,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
+    restart: always
 
   auth-service:
+    container_name: crypto-auth-service
     build:
       context: ./microServices/auth-microServices
       dockerfile: Dockerfile
@@ -89,7 +105,7 @@ services:
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
       - CONFIG_SERVER_URI=http://config-server:8888
       - SPRING_CLOUD_CONFIG_IMPORT_CHECK_ENABLED=false
       - SPRING_FLYWAY_ENABLED=false
@@ -102,7 +118,11 @@ services:
       - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
     ports:
       - "8081:8080"
+    networks:
+      - crypto-network
     depends_on:
+      postgres:
+        condition: service_healthy
       discovery-server:
         condition: service_healthy
       config-server:
@@ -113,13 +133,17 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
+    restart: always
 
   redis:
+    container_name: crypto-redis
     image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    networks:
+      - crypto-network
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -129,6 +153,7 @@ services:
     restart: always
 
   crypto-collector-micro:
+    container_name: crypto-collector-micro
     build:
       context: ./microServices/crypto-collector-micro
       dockerfile: Dockerfile
@@ -142,7 +167,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
       - COINGECKO_API_KEY=${COINGECKO_API_KEY}
@@ -150,6 +175,8 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
     ports:
       - "8092:8080"
+    networks:
+      - crypto-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,6 +192,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
+    restart: always
 
 volumes:
   postgres-data:
@@ -173,5 +201,6 @@ volumes:
     driver: local
 
 networks:
-  microServices:
+  crypto-network:
     driver: bridge
+    name: crypto-network
