@@ -1,0 +1,57 @@
+# Configuración para tests con H2 en memoria
+spring:
+  main:
+    allow-bean-definition-overriding: true # Permitir override de beans (conflicto WebFlux vs WebMVC)
+    
+  datasource:
+    url: jdbc:h2:mem:testdb_crypto;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driverClassName: org.h2.Driver
+    username: sa
+    password: 
+    
+  h2:
+    console:
+      enabled: false # Deshabilitar consola H2 en tests
+      
+  jpa:
+    hibernate:
+      ddl-auto: create-drop # Crear esquema al iniciar, eliminar al terminar
+    show-sql: false # Evitar ruido en logs de tests
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.H2Dialect
+        
+  liquibase:
+    enabled: false # Deshabilitar Liquibase en tests (conflicto con create-drop)
+    
+  # Configuración de cache para tests
+  cache:
+    type: simple # Cache simple en memoria para tests (no Redis)
+    
+  # Security - Configuración para tests
+  security:
+    user:
+      name: testuser
+      password: testpass
+
+# Configuración JWT para tests
+jwt:
+  secret: testSecretKeyForJunitTests123456789012345678901234567890
+  expiration: 3600000 # 1 hora
+
+# CoinGecko API - Mock en tests
+coingecko:
+  api:
+    base-url: http://localhost:8080/mock # No usaremos API real en tests
+    per-page: 100
+    delay-ms: 100 # Delay mínimo en tests
+
+# Logging para tests
+logging:
+  level:
+    root: INFO
+    com.cryptoCollector: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate: INFO

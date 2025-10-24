@@ -31,7 +31,7 @@ public class JwtUtil {
             }
             return Keys.hmacShaKeyFor(secretBytes);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to construct HMAC signing key", e);
+            throw new IllegalStateException("Falló al construir la clave de firma HMAC", e);
         }
     }
 

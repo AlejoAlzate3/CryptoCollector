@@ -9,10 +9,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * DTO estándar para respuestas de error.
- * Proporciona información consistente sobre errores a los clientes.
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,18 +19,11 @@ public class ErrorResponse {
     private LocalDateTime timestamp;
 
     private int status;
-
     private String error;
-
     private String message;
-
     private String path;
-
     private List<FieldError> fieldErrors;
 
-    /**
-     * DTO para errores de validación de campos específicos.
-     */
     @Data
     @Builder
     @NoArgsConstructor

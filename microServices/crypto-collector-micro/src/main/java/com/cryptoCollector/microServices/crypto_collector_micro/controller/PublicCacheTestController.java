@@ -34,10 +34,9 @@ public class PublicCacheTestController {
             response.put("timestamp", LocalDateTime.now());
             response.put("callNumber", callCounter);
             response.put("note", "Cada llamada genera un nuevo timestamp");
-            
-            // Simular consulta a BD (delay)
+
             Thread.sleep(100);
-            
+
             return response;
         });
     }

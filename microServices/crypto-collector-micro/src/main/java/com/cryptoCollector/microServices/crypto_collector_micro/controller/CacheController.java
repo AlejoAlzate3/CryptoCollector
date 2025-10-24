@@ -14,10 +14,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.*;
 
-/**
- * Controlador para gestionar la caché de Redis manualmente.
- * Permite limpiar cachés específicos o ver estadísticas de uso.
- */
 @RestController
 @RequestMapping("/api/cache")
 @Tag(name = "Gestión de Caché", description = "Endpoints para administrar la caché de Redis")
@@ -31,50 +27,41 @@ public class CacheController {
         this.cacheManager = cacheManager;
     }
 
-    /**
-     * Obtiene información sobre los cachés disponibles.
-     */
     @GetMapping("/info")
-    @Operation(summary = "Obtener información de cachés", 
-               description = "Muestra todos los cachés configurados y sus nombres")
+    @Operation(summary = "Obtener información de cachés", description = "Muestra todos los cachés configurados y sus nombres")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Información obtenida exitosamente"),
-        @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
+            @ApiResponse(responseCode = "200", description = "Información obtenida exitosamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
     })
     public Mono<ResponseEntity<Map<String, Object>>> getCacheInfo() {
         return Mono.fromCallable(() -> {
             Map<String, Object> info = new HashMap<>();
             Collection<String> cacheNames = cacheManager.getCacheNames();
-            
+
             info.put("totalCaches", cacheNames.size());
             info.put("cacheNames", cacheNames);
             info.put("cacheDescriptions", Map.of(
-                "crypto-list", "Lista paginada de criptomonedas (TTL: 5 min)",
-                "crypto-details", "Detalles de criptomoneda individual (TTL: 2 min)",
-                "crypto-stats", "Estadísticas generales (TTL: 1 min)",
-                "scheduler-status", "Estado del scheduler (TTL: 1 min)",
-                "coingecko-api", "Respuestas de CoinGecko API (TTL: 30 seg)"
-            ));
+                    "crypto-list", "Lista paginada de criptomonedas (TTL: 5 min)",
+                    "crypto-details", "Detalles de criptomoneda individual (TTL: 2 min)",
+                    "crypto-stats", "Estadísticas generales (TTL: 1 min)",
+                    "scheduler-status", "Estado del scheduler (TTL: 1 min)",
+                    "coingecko-api", "Respuestas de CoinGecko API (TTL: 30 seg)"));
 
             logger.info("📊 Información de cachés solicitada");
             return ResponseEntity.ok(info);
         });
     }
 
-    /**
-     * Limpia TODOS los cachés.
-     */
     @DeleteMapping("/clear-all")
-    @Operation(summary = "Limpiar todos los cachés", 
-               description = "Invalida y limpia TODOS los cachés de Redis. Las próximas consultas irán a la base de datos.")
+    @Operation(summary = "Limpiar todos los cachés", description = "Invalida y limpia TODOS los cachés de Redis. Las próximas consultas irán a la base de datos.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Todos los cachés limpiados exitosamente"),
-        @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
+            @ApiResponse(responseCode = "200", description = "Todos los cachés limpiados exitosamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
     })
     public Mono<ResponseEntity<Map<String, Object>>> clearAllCaches() {
         return Mono.fromCallable(() -> {
             List<String> clearedCaches = new ArrayList<>();
-            
+
             cacheManager.getCacheNames().forEach(cacheName -> {
                 var cache = cacheManager.getCache(cacheName);
                 if (cache != null) {
@@ -93,21 +80,17 @@ public class CacheController {
         });
     }
 
-    /**
-     * Limpia un caché específico por nombre.
-     */
     @DeleteMapping("/clear/{cacheName}")
-    @Operation(summary = "Limpiar un caché específico", 
-               description = "Invalida y limpia un caché específico por su nombre")
+    @Operation(summary = "Limpiar un caché específico", description = "Invalida y limpia un caché específico por su nombre")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Caché limpiado exitosamente"),
-        @ApiResponse(responseCode = "404", description = "Caché no encontrado"),
-        @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
+            @ApiResponse(responseCode = "200", description = "Caché limpiado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Caché no encontrado"),
+            @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
     })
     public Mono<ResponseEntity<Map<String, Object>>> clearSpecificCache(@PathVariable String cacheName) {
         return Mono.fromCallable(() -> {
             var cache = cacheManager.getCache(cacheName);
-            
+
             if (cache == null) {
                 logger.warn("⚠️  Intento de limpiar caché inexistente: {}", cacheName);
                 return ResponseEntity.notFound().build();
@@ -124,44 +107,31 @@ public class CacheController {
         });
     }
 
-    /**
-     * Limpia solo los cachés de listas (crypto-list).
-     */
     @DeleteMapping("/clear-lists")
-    @Operation(summary = "Limpiar caché de listas", 
-               description = "Invalida solo el caché de listas de criptomonedas")
+    @Operation(summary = "Limpiar caché de listas", description = "Invalida solo el caché de listas de criptomonedas")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Caché de listas limpiado"),
-        @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
+            @ApiResponse(responseCode = "200", description = "Caché de listas limpiado"),
+            @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
     })
     public Mono<ResponseEntity<Map<String, Object>>> clearListsCache() {
         return clearSpecificCache("crypto-list");
     }
 
-    /**
-     * Limpia solo los cachés de detalles (crypto-details).
-     */
     @DeleteMapping("/clear-details")
-    @Operation(summary = "Limpiar caché de detalles", 
-               description = "Invalida solo el caché de detalles de criptomonedas individuales")
+    @Operation(summary = "Limpiar caché de detalles", description = "Invalida solo el caché de detalles de criptomonedas individuales")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Caché de detalles limpiado"),
-        @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
+            @ApiResponse(responseCode = "200", description = "Caché de detalles limpiado"),
+            @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
     })
     public Mono<ResponseEntity<Map<String, Object>>> clearDetailsCache() {
         return clearSpecificCache("crypto-details");
     }
 
-    /**
-     * Precalienta el caché con datos comunes.
-     * Útil después de limpiar cachés o reiniciar el servidor.
-     */
     @PostMapping("/warmup")
-    @Operation(summary = "Precalentar caché", 
-               description = "Carga datos comúnmente consultados en caché para mejorar rendimiento inicial")
+    @Operation(summary = "Precalentar caché", description = "Carga datos comúnmente consultados en caché para mejorar rendimiento inicial")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Caché precalentado exitosamente"),
-        @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
+            @ApiResponse(responseCode = "200", description = "Caché precalentado exitosamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado - Token JWT requerido")
     })
     public Mono<ResponseEntity<Map<String, Object>>> warmupCache() {
         return Mono.fromCallable(() -> {

@@ -34,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         boolean skip = path.startsWith("/actuator") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/swagger-ui") ||
-                path.startsWith("/api/public");  // Endpoints públicos para demos
+                path.startsWith("/api/public");
         if (skip) {
             logger.info("⏭️  Saltando filtro JWT para ruta pública: {}", path);
         }
@@ -56,7 +56,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.info("👤 Subject extraído del token: {}", subject);
 
             if (subject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Crear autenticación con credenciales y marcar como autenticado
                 var auth = new UsernamePasswordAuthenticationToken(
                         subject,
                         null,

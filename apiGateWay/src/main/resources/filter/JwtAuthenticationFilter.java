@@ -23,7 +23,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        // Permitir rutas públicas (sin autenticación)
         if (isPublicPath(path)) {
             return chain.filter(exchange);
         }
@@ -46,7 +45,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
             Claims claims = jwtUtil.extractAllClaims(token);
 
-            // Propagar claims al request
             exchange = exchange.mutate()
                     .request(r -> r.headers(h -> {
                         h.add("X-User-Id", claims.getSubject());
@@ -65,22 +63,19 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1; // alta prioridad
+        return -1;
     }
-    
-    /**
-     * Verifica si una ruta es pública (no requiere autenticación)
-     */
+
     private boolean isPublicPath(String path) {
         return path.startsWith("/api/auth/register") ||
-               path.startsWith("/api/auth/login") ||
-               path.startsWith("/api/public") ||
-               path.startsWith("/swagger-ui") ||
-               path.startsWith("/auth/swagger-ui") ||
-               path.startsWith("/crypto/swagger-ui") ||
-               path.startsWith("/v3/api-docs") ||
-               path.startsWith("/auth/v3/api-docs") ||
-               path.startsWith("/crypto/v3/api-docs") ||
-               path.equals("/actuator/health");
+                path.startsWith("/api/auth/login") ||
+                path.startsWith("/api/public") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/auth/swagger-ui") ||
+                path.startsWith("/crypto/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/auth/v3/api-docs") ||
+                path.startsWith("/crypto/v3/api-docs") ||
+                path.equals("/actuator/health");
     }
 }

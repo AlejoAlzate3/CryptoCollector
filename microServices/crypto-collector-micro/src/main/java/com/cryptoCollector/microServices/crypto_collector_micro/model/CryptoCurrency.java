@@ -9,7 +9,11 @@ import java.time.OffsetDateTime;
 @Table(name = "cryptocurrency", uniqueConstraints = {
         @UniqueConstraint(columnNames = "coin_id")
 })
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CryptoCurrency {
 
     @Id
@@ -17,7 +21,7 @@ public class CryptoCurrency {
     private Long id;
 
     @Column(name = "coin_id", nullable = false, length = 128)
-    private String coinId; // id from CoinGecko, unique
+    private String coinId;
 
     private String name;
     private String symbol;

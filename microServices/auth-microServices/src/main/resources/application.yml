@@ -1,9 +1,8 @@
 spring:
     application:
-            name: auth-microServices
+        name: auth-microServices
     config:
         import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
-
     profiles:
         active: dev
     liquibase:
@@ -12,10 +11,9 @@ spring:
 management:
     endpoints:
         web:
-            exposure:
-                include: health,info
+        exposure:
+            include: health,info
 
-# Configuración de Springdoc/Swagger para trabajar detrás del API Gateway
 springdoc:
     api-docs:
         enabled: true
@@ -23,6 +21,7 @@ springdoc:
         enabled: true
     use-management-port: false
     use-root-path: false
+
 server:
     forward-headers-strategy: framework
 

@@ -15,15 +15,6 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        # Ejemplo de rutas estáticas (opcional)
-        # - id: auth-service
-        #   uri: lb://service-auth
-        #   predicates:
-        #     - Path=/api/auth/**
-        # - id: crypto-service
-        #   uri: lb://service-crypto
-        #   predicates:
-        #     - Path=/api/crypto/**
 
 eureka:
   client:

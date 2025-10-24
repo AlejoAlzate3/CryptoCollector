@@ -11,10 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.MessageDigest;
 
-/**
- * Utilidad para validar tokens JWT en el microservicio crypto-collector.
- * Debe usar el mismo secreto que el servicio de autenticación.
- */
 @Component
 public class JwtUtil {
 
@@ -44,12 +40,6 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * Extrae el subject (username) del token JWT.
-     * 
-     * @param token Token JWT
-     * @return Subject o null si el token es inválido
-     */
     public String getSubjectFromToken(String token) {
         try {
             logger.debug("🔍 Validando token JWT...");
@@ -75,22 +65,10 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * Valida si el token JWT es válido.
-     * 
-     * @param token Token JWT
-     * @return true si es válido, false en caso contrario
-     */
     public boolean validateToken(String token) {
         return getSubjectFromToken(token) != null;
     }
 
-    /**
-     * Extrae el token del header Authorization.
-     * 
-     * @param authHeader Header Authorization (formato: "Bearer <token>")
-     * @return Token JWT o null si el formato es inválido
-     */
     public String extractTokenFromHeader(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);

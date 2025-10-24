@@ -8,7 +8,7 @@ spring:
         active: dev
     liquibase:
         change-log: classpath:db/changelog/db.changelog-master.yaml
-    
+
     # Redis Configuration
     data:
         redis:
@@ -21,12 +21,12 @@ spring:
                     max-idle: 8
                     min-idle: 0
                     max-wait: -1ms
-    
+
     # Cache Configuration
     cache:
         type: redis
         redis:
-            time-to-live: 300000  # 5 minutos por defecto en milisegundos
+            time-to-live: 300000
             cache-null-values: false
 
 management:
@@ -35,7 +35,6 @@ management:
             exposure:
                 include: health,info
 
-# Configuración de Springdoc/Swagger para trabajar detrás del API Gateway
 springdoc:
     api-docs:
         enabled: true

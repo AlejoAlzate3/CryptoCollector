@@ -7,15 +7,16 @@ spring:
             maximum-pool-size: 20
             minimum-idle: 5
             connection-timeout: 30000
-        jpa:
+    
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+        properties:
             hibernate:
-                ddl-auto: validate
-            show-sql: false
-            properties:
-                hibernate:
-                    format_sql: false
-                    use_sql_comments: false
-
+                format_sql: false
+                use_sql_comments: false
+    
     jwt:
         secret: ${JWT_SECRET}
         expiration: ${JWT_EXPIRATION:86400000}
@@ -51,3 +52,6 @@ springdoc:
         enabled: false
     swagger-ui:
         enabled: false
+
+server:
+    forward-headers-strategy: framework

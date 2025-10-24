@@ -18,89 +18,73 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Configuración de Redis para caché de datos de criptomonedas.
- * 
- * Estrategia de TTL (Time To Live):
- * - crypto-list: 5 minutos - Las listas cambian frecuentemente pero no cada segundo
- * - crypto-details: 2 minutos - Detalles individuales se consultan mucho
- * - crypto-stats: 1 minuto - Estadísticas generales cambian con cada inserción
- * - coingecko-api: 30 segundos - Datos de API externa (rate limiting)
- */
 @Configuration
 @EnableCaching
 public class RedisConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
+        private static final Logger logger = LoggerFactory.getLogger(RedisConfig.class);
 
-    /**
-     * Configuración del CacheManager con diferentes TTLs por tipo de caché.
-     */
-    @Bean
-    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        logger.info("🔧 Configurando Redis CacheManager con TTLs personalizados...");
+        @Bean
+        public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+                logger.info("🔧 Configurando Redis CacheManager con TTLs personalizados...");
 
-        // Configurar ObjectMapper para soportar Java 8 Date/Time API (OffsetDateTime, LocalDateTime, etc.)
-        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+                objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        // Configuración por defecto (5 minutos) con ObjectMapper personalizado
-        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(5))
-                .serializeKeysWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(
-                                new GenericJackson2JsonRedisSerializer(objectMapper)))
-                .disableCachingNullValues();
+                RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                                .entryTtl(Duration.ofMinutes(5))
+                                .serializeKeysWith(
+                                                RedisSerializationContext.SerializationPair
+                                                                .fromSerializer(new StringRedisSerializer()))
+                                .serializeValuesWith(
+                                                RedisSerializationContext.SerializationPair.fromSerializer(
+                                                                new GenericJackson2JsonRedisSerializer(objectMapper)))
+                                .disableCachingNullValues();
 
-        // Configuraciones específicas por nombre de caché
-        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        
-        // Lista de criptomonedas - 5 minutos
-        cacheConfigurations.put("crypto-list", defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        
-        // Detalles de criptomoneda individual - 2 minutos
-        cacheConfigurations.put("crypto-details", defaultConfig.entryTtl(Duration.ofMinutes(2)));
-        
-        // Estadísticas generales - 1 minuto
-        cacheConfigurations.put("crypto-stats", defaultConfig.entryTtl(Duration.ofMinutes(1)));
-        
-        // Respuestas de CoinGecko API - 30 segundos (para respetar rate limiting)
-        cacheConfigurations.put("coingecko-api", defaultConfig.entryTtl(Duration.ofSeconds(30)));
-        
-        // Estado del scheduler - 1 minuto
-        cacheConfigurations.put("scheduler-status", defaultConfig.entryTtl(Duration.ofMinutes(1)));
+                // Configuraciones específicas por nombre de caché
+                Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        logger.info("✅ Redis Cache configurado:");
-        logger.info("   - crypto-list: 5 minutos TTL");
-        logger.info("   - crypto-details: 2 minutos TTL");
-        logger.info("   - crypto-stats: 1 minuto TTL");
-        logger.info("   - coingecko-api: 30 segundos TTL");
-        logger.info("   - scheduler-status: 1 minuto TTL");
+                // Lista de criptomonedas - 5 minutos
+                cacheConfigurations.put("crypto-list", defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(cacheConfigurations)
-                .transactionAware()
-                .build();
-    }
+                // Detalles de criptomoneda individual - 2 minutos
+                cacheConfigurations.put("crypto-details", defaultConfig.entryTtl(Duration.ofMinutes(2)));
 
-    /**
-     * RedisTemplate para operaciones manuales con Redis si es necesario.
-     */
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
-        
-        logger.info("✅ RedisTemplate configurado con serializadores JSON");
-        
-        return template;
-    }
+                // Estadísticas generales - 1 minuto
+                cacheConfigurations.put("crypto-stats", defaultConfig.entryTtl(Duration.ofMinutes(1)));
+
+                // Respuestas de CoinGecko API - 30 segundos (para respetar rate limiting)
+                cacheConfigurations.put("coingecko-api", defaultConfig.entryTtl(Duration.ofSeconds(30)));
+
+                // Estado del scheduler - 1 minuto
+                cacheConfigurations.put("scheduler-status", defaultConfig.entryTtl(Duration.ofMinutes(1)));
+
+                logger.info("✅ Redis Cache configurado:");
+                logger.info("   - crypto-list: 5 minutos TTL");
+                logger.info("   - crypto-details: 2 minutos TTL");
+                logger.info("   - crypto-stats: 1 minuto TTL");
+                logger.info("   - coingecko-api: 30 segundos TTL");
+                logger.info("   - scheduler-status: 1 minuto TTL");
+
+                return RedisCacheManager.builder(connectionFactory)
+                                .cacheDefaults(defaultConfig)
+                                .withInitialCacheConfigurations(cacheConfigurations)
+                                .transactionAware()
+                                .build();
+        }
+
+        @Bean
+        public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+                RedisTemplate<String, Object> template = new RedisTemplate<>();
+                template.setConnectionFactory(connectionFactory);
+                template.setKeySerializer(new StringRedisSerializer());
+                template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+                template.setHashKeySerializer(new StringRedisSerializer());
+                template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+
+                logger.info("✅ RedisTemplate configurado con serializadores JSON");
+
+                return template;
+        }
 }

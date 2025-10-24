@@ -15,19 +15,15 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        # ============================================
         # AUTH SERVICE ROUTES
-        # ============================================
-        
-        # Auth - Register & Login (público)
         - id: auth-public
           uri: lb://auth-microservices
           predicates:
             - Path=/api/auth/register, /api/auth/login
           filters:
             - RewritePath=/api/auth/(?<segment>.*), /api/auth/$\{segment}
-        
-        # Auth - Swagger UI (sin trailing slash en segment)
+
+        # Auth - Swagger UI
         - id: auth-swagger-ui
           uri: lb://auth-microservices
           predicates:
@@ -36,7 +32,7 @@ spring:
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
             - PreserveHostHeader
             - AddRequestHeader=X-Forwarded-Prefix, /auth
-        
+
         # Auth - API Docs
         - id: auth-api-docs
           uri: lb://auth-microservices
@@ -45,11 +41,8 @@ spring:
           filters:
             - RewritePath=/auth/(?<segment>.*), /$\{segment}
             - AddRequestHeader=X-Forwarded-Prefix, /auth
-        
-        # ============================================
+
         # CRYPTO COLLECTOR ROUTES
-        # ============================================
-        
         # Crypto - Endpoints públicos (sin autenticación)
         - id: crypto-public
           uri: lb://crypto-collector-micro
@@ -57,7 +50,7 @@ spring:
             - Path=/api/public/**
           filters:
             - RewritePath=/api/public/(?<segment>.*), /api/public/$\{segment}
-        
+
         # Crypto - Endpoints protegidos
         - id: crypto-protected
           uri: lb://crypto-collector-micro
@@ -65,7 +58,7 @@ spring:
             - Path=/api/crypto/**, /api/cache/**
           filters:
             - RewritePath=/api/(?<segment>.*), /api/$\{segment}
-        
+
         # Crypto - Swagger UI (sin trailing slash en segment)
         - id: crypto-swagger-ui
           uri: lb://crypto-collector-micro
@@ -75,7 +68,7 @@ spring:
             - RewritePath=/crypto/(?<segment>.*), /$\{segment}
             - PreserveHostHeader
             - AddRequestHeader=X-Forwarded-Prefix, /crypto
-        
+
         # Crypto - API Docs
         - id: crypto-api-docs
           uri: lb://crypto-collector-micro
@@ -84,11 +77,11 @@ spring:
           filters:
             - RewritePath=/crypto/(?<segment>.*), /$\{segment}
             - AddRequestHeader=X-Forwarded-Prefix, /crypto
-      
+
       # Configuración global de CORS
       globalcors:
         corsConfigurations:
-          '[/**]':
+          "[/**]":
             allowedOrigins: "*"
             allowedMethods:
               - GET
@@ -120,7 +113,7 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET:devSecretChangeMe}
-  expiration: ${JWT_EXPIRATION:86400000}  # 24 horas
+  expiration: ${JWT_EXPIRATION:86400000} # 24 horas
 
 logging:
   level:

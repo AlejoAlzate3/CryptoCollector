@@ -32,11 +32,6 @@ public class CryptoFetchService {
                 }
         }
 
-        /**
-         * Obtiene hasta 1000 criptomonedas de CoinGecko.
-         * Con API Key: usa 250 items por página (4 páginas total) con delay mínimo.
-         * Sin API Key: usa 50 items por página (20 páginas) con delay mayor.
-         */
         public Flux<CoinGeckoCoin> fetchExactly1000Reactive() {
                 boolean hasApiKey = apiKey != null && !apiKey.isEmpty();
 
@@ -44,7 +39,7 @@ public class CryptoFetchService {
                 // Sin API Key: 20 páginas de 50 items con delay largo
                 int perPage = hasApiKey ? 250 : 50;
                 int totalPages = hasApiKey ? 4 : 20;
-                long delayMillis = hasApiKey ? 300 : 1200; // 0.3s vs 1.2s
+                long delayMillis = hasApiKey ? 300 : 1200;
 
                 logger.info("Iniciando fetch de {} paginas con {} items cada una (API Key: {})",
                                 totalPages, perPage, hasApiKey ? "SI" : "NO");
@@ -59,10 +54,6 @@ public class CryptoFetchService {
                                 .doOnError(error -> logger.error("Error durante fetch: {}", error.getMessage()));
         }
 
-        /**
-         * Obtiene una sola página de criptomonedas.
-         * Útil para testing con menos datos.
-         */
         public Flux<CoinGeckoCoin> fetchSinglePage(int page, int perPage) {
                 logger.info("Fetching single page: {} with {} items", page, perPage);
                 return fetchPage(page, perPage);

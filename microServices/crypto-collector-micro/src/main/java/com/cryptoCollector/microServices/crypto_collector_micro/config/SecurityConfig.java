@@ -27,26 +27,24 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         logger.info("🛡️ Configurando SecurityFilterChain...");
         http
-            .csrf(csrf -> csrf.disable())
-            .httpBasic(basic -> basic.disable())
-            .formLogin(form -> form.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/public/**").permitAll()  // Endpoints públicos para demos
-                .requestMatchers("/api/crypto/**").authenticated()
-                .anyRequest().denyAll()
-            )
-            .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .securityContext(context -> context.requireExplicitSave(false))  // Asegurar que el contexto se guarda automáticamente
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
-                    logger.error("❌ Error de autenticación: {} - Path: {}", 
-                        authException.getMessage(), request.getRequestURI());
-                    response.sendError(401, "No autorizado");
-                })
-            );
+                .csrf(csrf -> csrf.disable())
+                .httpBasic(basic -> basic.disable())
+                .formLogin(form -> form.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/crypto/**").authenticated()
+                        .anyRequest().denyAll())
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .securityContext(context -> context.requireExplicitSave(false))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            logger.error("❌ Error de autenticación: {} - Path: {}",
+                                    authException.getMessage(), request.getRequestURI());
+                            response.sendError(401, "No autorizado");
+                        }));
 
         logger.info("✅ SecurityFilterChain configurado - Endpoints /api/crypto/** requieren autenticación JWT");
         return http.build();
