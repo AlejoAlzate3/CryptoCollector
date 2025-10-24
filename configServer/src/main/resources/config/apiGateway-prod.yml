@@ -10,11 +10,88 @@ spring:
       server:
         webflux:
           default-filters: []
+          routes:
+            # AUTH SERVICE ROUTES
+            - id: auth-public
+              uri: lb://auth-microservices
+              predicates:
+                - Path=/api/auth/register, /api/auth/login
+              filters:
+                - RewritePath=/api/auth/(?<segment>.*), /api/auth/$\{segment}
+
+            - id: auth-swagger-ui
+              uri: lb://auth-microservices
+              predicates:
+                - Path=/auth/swagger-ui/**
+              filters:
+                - RewritePath=/auth/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+                - AddRequestHeader=X-Forwarded-Prefix, /auth
+
+            - id: auth-api-docs
+              uri: lb://auth-microservices
+              predicates:
+                - Path=/auth/v3/api-docs/**
+              filters:
+                - RewritePath=/auth/(?<segment>.*), /$\{segment}
+                - AddRequestHeader=X-Forwarded-Prefix, /auth
+
+            # CRYPTO COLLECTOR ROUTES
+            - id: crypto-public
+              uri: lb://crypto-collector-micro
+              predicates:
+                - Path=/api/public/**
+              filters:
+                - RewritePath=/api/public/(?<segment>.*), /api/public/$\{segment}
+
+            - id: crypto-protected
+              uri: lb://crypto-collector-micro
+              predicates:
+                - Path=/api/crypto/**, /api/cache/**
+              filters:
+                - RewritePath=/api/(?<segment>.*), /api/$\{segment}
+
+            - id: crypto-swagger-ui
+              uri: lb://crypto-collector-micro
+              predicates:
+                - Path=/crypto/swagger-ui/**
+              filters:
+                - RewritePath=/crypto/(?<segment>.*), /$\{segment}
+                - PreserveHostHeader
+                - AddRequestHeader=X-Forwarded-Prefix, /crypto
+
+            - id: crypto-api-docs
+              uri: lb://crypto-collector-micro
+              predicates:
+                - Path=/crypto/v3/api-docs/**
+              filters:
+                - RewritePath=/crypto/(?<segment>.*), /$\{segment}
+                - AddRequestHeader=X-Forwarded-Prefix, /crypto
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
-      routes:
+      globalcors:
+        corsConfigurations:
+          "[/**]":
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
 
 eureka:
   client:
