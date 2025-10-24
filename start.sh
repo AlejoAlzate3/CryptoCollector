@@ -101,10 +101,11 @@ log_success "Servicios detenidos"
 
 # 5. Construir imágenes Docker
 log_info "Construyendo imágenes Docker..."
-if docker-compose build --no-cache; then
+if docker-compose build; then
     log_success "Imágenes construidas exitosamente"
 else
     log_error "Error al construir las imágenes"
+    log_info "Intenta ejecutar: docker-compose build --no-cache"
     exit 1
 fi
 
@@ -154,6 +155,7 @@ check_health "crypto-discovery-server"
 check_health "crypto-api-gateway"
 check_health "crypto-auth-service"
 check_health "crypto-collector-micro"
+check_health "crypto-frontend"
 
 echo ""
 log_success "Todos los servicios están ejecutándose"
@@ -162,8 +164,10 @@ log_success "Todos los servicios están ejecutándose"
 echo ""
 log_info "Información de acceso:"
 echo -e "${GREEN}========================================"
+echo "  Frontend:          http://localhost:4201"
 echo "  API Gateway:       http://localhost:8080"
 echo "  Eureka Dashboard:  http://localhost:8761"
+echo "  Config Server:     http://localhost:8888"
 echo "  Swagger Auth:      http://localhost:8081/swagger-ui/index.html"
 echo "  Swagger Crypto:    http://localhost:8092/swagger-ui/index.html"
 echo "  PostgreSQL:        localhost:5432"
@@ -178,6 +182,13 @@ echo ""
 # Esperar un poco más para que los servicios estén completamente listos
 sleep 10
 
+# Probar Frontend
+if curl -s -f http://localhost:4201 > /dev/null 2>&1; then
+    log_success "Frontend respondiendo correctamente"
+else
+    log_warning "Frontend no está respondiendo aún"
+fi
+
 # Probar API Gateway
 if curl -s -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
     log_success "API Gateway respondiendo correctamente"
@@ -190,6 +201,13 @@ if curl -s -f http://localhost:8761 > /dev/null 2>&1; then
     log_success "Eureka Dashboard accesible"
 else
     log_warning "Eureka Dashboard no está accesible aún"
+fi
+
+# Probar Config Server
+if curl -s -f http://localhost:8888/actuator/health > /dev/null 2>&1; then
+    log_success "Config Server respondiendo correctamente"
+else
+    log_warning "Config Server no está respondiendo aún"
 fi
 
 echo ""
