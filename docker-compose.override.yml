@@ -1,0 +1,31 @@
+# docker-compose.override.yml
+# Este archivo se usa automáticamente en desarrollo local
+# Para deshabilitarlo, usa: docker-compose -f docker-compose.yml up
+
+services:
+  # Frontend con hot-reload para desarrollo
+  frontend:
+    volumes:
+      - ../crytoCollectorFront/src:/app/src:ro
+      - ../crytoCollectorFront/angular.json:/app/angular.json:ro
+      - ../crytoCollectorFront/tsconfig.json:/app/tsconfig.json:ro
+    environment:
+      - NODE_ENV=development
+    command: npm start
+    ports:
+      - "4200:4200"  # Puerto de desarrollo de Angular
+
+  # Exponer puertos de debug para servicios Java
+  auth-service:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    ports:
+      - "8081:8080"
+      - "5005:5005"  # Puerto de debug
+
+  crypto-collector-micro:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006
+    ports:
+      - "8092:8080"
+      - "5006:5006"  # Puerto de debug

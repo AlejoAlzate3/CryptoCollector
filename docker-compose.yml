@@ -194,6 +194,27 @@ services:
       start_period: 30s
     restart: always
 
+  frontend:
+    container_name: crypto-frontend
+    build:
+      context: ../crytoCollectorFront
+      dockerfile: Dockerfile
+    image: cryptocollector/frontend:latest
+    ports:
+      - "4200:80"
+    networks:
+      - crypto-network
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+
 volumes:
   postgres-data:
     driver: local
